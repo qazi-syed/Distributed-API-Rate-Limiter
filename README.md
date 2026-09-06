@@ -73,14 +73,18 @@ Using distributed locks (such as Redlock) introduces excessive network overhead 
 
 This project resolves both problems by running an atomic Token Bucket algorithm directly inside Redis via Lua, completely avoiding external distributed locks and smoothing out traffic bursts while enforcing strict quotas.
 
-Token Bucket Algorithm & Mathematical Model
-Tokens replenish continuously at a constant rate $r$ up to a maximum burst capacity $C$. Instead of maintaining expensive background timer threads for millions of inactive users, replenishment is computed lazily on-demand when a request arrives:
+### Token Bucket Algorithm & Mathematical Model
 
-$$\Delta t = \max(0, t_{\text{current}} - t_{\text{last\_refreshed}})$$$$\text{Tokens to Add} = \Delta t \times r$$$$\text{Current Tokens} = \min(C, \text{Tokens}_{\text{previous}} + \text{Tokens to Add})$$
+Tokens replenish continuously at a constant rate $r$ up to a maximum burst capacity $C$. Instead of maintaining expensive background timer threads for millions of inactive users, replenishment is computed **lazily on-demand** when a request arrives:
 
+$$\Delta t = \max(0, t_{\text{current}} - t_{\text{last}})$$
+
+$$\text{Tokens to Add} = \Delta t \times r$$
+
+$$\text{Current Tokens} = \min(C, \text{Tokens}_{\text{prev}} + \text{Tokens to Add})$$
 
 ```
-Token Capacity: C = 10
+                Token Capacity: C = 10
                   ┌─────────────────┐
   Refill Rate:    │      ●   ●      │
   r = 1 token/sec ───>│    ●   ●   ●    │
@@ -146,12 +150,13 @@ rate-limiter/
             └── token_bucket.lua           # In-engine atomic Token Bucket script
 ```
 
-Getting Started
-Prerequisites
+### Prerequisites
 
-•Docker Desktop
-•Java Development Kit (JDK 17+)
-•Apache Maven
+| Tool | Version / Type | Purpose |
+| :--- | :--- | :--- |
+| **Docker Desktop** | Latest (v20+) | Container runtime & Docker Compose orchestration |
+| **Java JDK** | 17+ (Temurin / OpenJDK) | Java compiler and runtime environment |
+| **Apache Maven** | 3.8+ | Dependency management and build packaging |
 
 1. Build and Package
 
@@ -172,9 +177,9 @@ docker compose ps
 ```
 The system initializes three isolated services:
 
-•Rate Limiter Gateway: http://localhost:8080
-•Upstream Mock Server (httpbin): http://localhost:8081
-•Redis Cache Tier: localhost:6379
+- **Rate Limiter Gateway:** `http://localhost:8080`
+- **Upstream Mock Server (`httpbin`):** `http://localhost:8081`
+- **Redis Cache Tier:** `localhost:6379`
 
 Verification & Load Testing
 1. Baseline Verification (Tokens Available)
